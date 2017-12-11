@@ -10,8 +10,12 @@ def init():
     """
 
 
+@app.route('/words/list')
+def word_list():
+    return jsonify({'words': ['a', 'abba', 'apple', 'zebra']})
 
-@app.route('/word/vector')
+
+@app.route('/words/vector')
 def word_vectors():
     ids = [i for i in request.args['ids'].split(',')]
     return jsonify({'words': {i: {'vector': [0.1]*10} for i in ids}})
