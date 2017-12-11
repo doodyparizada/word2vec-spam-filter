@@ -12,7 +12,7 @@ def init():
 
 @app.route('/words/list')
 def word_list():
-    return jsonify({'words': ['a', 'abba', 'apple', 'zebra']})
+    return '\n'.join(['a', 'abba', 'apple', 'zebra'])
 
 
 @app.route('/words/vector')
