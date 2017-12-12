@@ -118,9 +118,8 @@ def message_to_vector(message):
 def report_spam():
     """if spam message already exists or is close to a known message add a report count. else add as new entry in db."""
     data = request.get_json()
-    vector = data['vector']
-    reported_message = data['message']
-    # print('calculate vs given', vector == message_to_vector(reported_message))
+    reported_message = data['message'].lower()
+    vector = message_to_vector(reported_message)
 
     results = list(closest_spam(vector, 0))
     if results:
