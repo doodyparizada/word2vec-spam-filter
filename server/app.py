@@ -5,10 +5,12 @@ import numpy as np
 
 from model import DB
 from generate import generate_matrix, normalize_matrix, normalize_vector
-
+from flask_cors import CORS
 
 app = Flask(__name__)
 GLOVE = '../glove.6B.300d.txt'
+CORS(app)
+
 vocab = {}
 ivocab = {}
 WORD_LIST = ''

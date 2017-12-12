@@ -1,0 +1,8 @@
+.idea
+
+glove*.txt
+
+webclient/*/bin
+webclient/node_modules
+
+server/*.pyc

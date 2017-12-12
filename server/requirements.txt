@@ -1,4 +1,5 @@
 flask==0.12.2
+Flask-Cors==3.0.3
 requests==2.18.4
 schematics==2.0.1
 numpy==1.13.3
