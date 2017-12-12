@@ -114,7 +114,7 @@ def message_to_vector(message):
     return vector
 
 
-@app.route('/spam/report')
+@app.route('/spam/report', methods=['POST'])
 def report_spam():
     """if spam message already exists or is close to a known message add a report count. else add as new entry in db."""
     data = request.get_json()
