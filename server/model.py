@@ -7,7 +7,7 @@ class DB(Model):
         reports = IntType()
         vector = ListType(FloatType)
 
-    reported_messages = DictType(ModelType(ReportedMessage))
+    reported_messages = DictType(ModelType(ReportedMessage), default={})
     
     def add_new_message(self, reported_message, vector):
         rm = self.ReportedMessage()

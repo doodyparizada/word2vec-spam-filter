@@ -1,4 +1,5 @@
 import json
+from math import log
 
 from flask import request, Flask, jsonify
 import numpy as np
@@ -7,20 +8,23 @@ from model import DB
 from generate import generate_matrix, normalize_matrix, normalize_vector
 from flask_cors import CORS
 
+
 app = Flask(__name__)
 GLOVE = '../glove.6B.300d.txt'
 CORS(app)
-
+FREQ = '../enwiki-20150602-words-frequency.txt'
+iweights = {}
 vocab = {}
 ivocab = {}
 WORD_LIST = ''
 W_norm = None
 EPSILON = 0.99
+DEFAULT_WEIGHT = 15
 
 
 def init():
     """read glove file and generate a word matrix"""
-    global W_norm, WORD_LIST, vocab, ivocab
+    global W_norm, WORD_LIST, vocab, ivocab, iweights 
     word_vectors = []
     
     # open and parse word vector file
@@ -35,6 +39,16 @@ def init():
     W, vocab, ivocab = generate_matrix(word_vectors)
     W_norm = normalize_matrix(W)
 
+    max_freq = None
+    with open(FREQ, 'r') as f:
+        for line in f:
+            vals = line.rstrip().split(' ')
+            word = vals[0]
+            freq = int(vals[1])
+            max_freq = max_freq or freq  # the first iteration will set max_freq. The first line is the highest freq
+            if word in vocab:
+                iweights[vocab[word]] = 0.5 - log(float(freq)/max_freq, 2)  # taken from https://www.wikiwand.com/en/Word_lists_by_frequency
+    
 
 def generate_spam_matrix(report_threashold):
     """
@@ -84,10 +98,10 @@ def word_list():
 @app.route('/words/vector')
 def word_vectors():
     """retrun vectors for the words by given ids."""
-    ids = [int(i) for i in request.args['ids'].split(',')]
+    ids = {int(i) for i in request.args['ids'].split(',')}
 
     return jsonify({'words':
-                    {i: {'vector': W_norm[i, :].tolist()}
+                    {i: {'vector': W_norm[i, :].tolist(), 'weight': iweights.get(i, DEFAULT_WEIGHT)}
                      for i in ids}})
 
 
@@ -110,9 +124,9 @@ def detect_spam():
 def message_to_vector(message):
     """sums up all known vectors of a given message."""
     vector = np.zeros(W_norm[0, :].shape)
-    for term in message.split(' '):
+    for term in message.split(' '):  # XXX TOKENIZE message similar to client
         if term in vocab:
-            vector += W_norm[vocab[term], :]
+            vector += W_norm[vocab[term], :]  # XXX apply weights
     return vector
 
 
