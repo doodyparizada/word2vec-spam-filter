@@ -8,7 +8,7 @@ from generate import generate_matrix, normalize_matrix, normalize_vector
 
 
 app = Flask(__name__)
-GLOVE = '../glove.6B.50d.txt'
+GLOVE = '../glove.6B.300d.txt'
 vocab = {}
 ivocab = {}
 WORD_LIST = ''
