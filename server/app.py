@@ -1,11 +1,14 @@
-from flask import request, Flask, jsonify
 import json
+
+from flask import request, Flask, jsonify
 import numpy as np
+
+from model import DB
+from generate import generate_matrix, normalize_matrix, normalize_vector
 
 
 app = Flask(__name__)
 GLOVE = '../glove.6B.50d.txt'
-vectors = {}
 vocab = {}
 ivocab = {}
 WORD_LIST = ''
@@ -13,51 +16,32 @@ W_norm = None
 
 
 def init():
-    global W_norm, WORD_LIST, vectors, vocab, ivocab
-    words = []
+    """read glove file and generate a word matrix"""
+    global W_norm, WORD_LIST, vocab, ivocab
+    word_vectors = []
     
     # open and parse word vector file
     with open(GLOVE, 'r') as f:
         for line in f:
             vals = line.rstrip().split(' ')
-            # word 0.1 0.1 0.1 0.1 ...
-            vectors[vals[0]] = [float(x) for x in vals[1:]]
-            words.append(vals[0])
+            vector = [float(x) for x in vals[1:]]
+            word = vals[0]
+            word_vectors.append((word, vector))
 
-    vocab = {w: idx for idx, w in enumerate(words)}
-    ivocab = {idx: w for idx, w in enumerate(words)}
-    WORD_LIST += '\n'.join(words)
+    WORD_LIST += '\n'.join(w for w, _ in word_vectors)
+    W, vocab, ivocab = generate_matrix(word_vectors)
+    W_norm = normalize_matrix(W)
 
 
 def generate_spam_matrix():
     """
     put all known spam vectors in a matrix
     """
-    # create and normalize the huge word matrix
     db = read_db()
-    vectors = {}
-    words = db.keys()
-    for word, val in db:
-        if val['reports'] < 3:
-            continue
-        vectors[word] = [float(x) for x in val['vector']]
-
-    vocab = {w: idx for idx, w in enumerate(words)}
-    ivocab = {idx: w for idx, w in enumerate(words)}
-        
-    vocab_size = len(vectors)
-    vector_dim = len(vectors.values()[0])
-    W = np.zeros((vocab_size, vector_dim))
-    for word, v in vectors.items():
-        W[vocab[word], :] = v
-    return W, vocab, ivocab
-
-
-def normalize_vector(vector):
-    vec_norm = np.zeros(vector.shape)
-    d = (np.sum(vector ** 2,) ** (0.5))
-    vec_norm = (vector.T / d).T
-    return vec_norm
+    word_vectors = [(word, rm.vector)
+                    for word, rm in db.reported_messages.items()
+                    if rm.reports >= 3]
+    return generate_matrix(word_vectors)
 
 
 def closest_spam(vector):
@@ -68,24 +52,17 @@ def closest_spam(vector):
 
     dist = np.dot(W, vector.T)
 
-    a = np.argsort(-dist)[:3]
+    a = np.argsort(-dist)[:3]  # currently returns generator of 3 most closest
     for x in a:
         yield ivocab[x], dist[x]
 
 
 def read_db():
-    """
-    example:
-    {
-      'message 1': {'reports': 3, 'vector': [0.1, 0.2, ...]},
-      'message 2': {'reports': 3, 'vector': [0.1, 0.2, ...]},
-    }
-    """
-    return json.load('db.json')
+    return DB(json.load('db.json'))
 
 
 def save_db(db):
-    json.dump(db)
+    json.dump(db.to_primitive(), 'db.json')
 
 
 @app.route('/words/list')
@@ -96,16 +73,12 @@ def word_list():
 
 @app.route('/words/vector')
 def word_vectors():
-    """retrun vectors for the words by given ids.
-    
-    when there is no vector for a given word index, it is skipped.
-    """
+    """retrun vectors for the words by given ids."""
     ids = [int(i) for i in request.args['ids'].split(',')]
 
     return jsonify({'words':
-                    {i: {'vector': vectors[ivocab[i]]}
-                     for i in ids
-                     if i in ivocab and ivocab[i] in vectors}})
+                    {i: {'vector': W_norm[i, :]}
+                     for i in ids}})
 
 
 @app.route('/spam/detect')
@@ -115,8 +88,33 @@ def detect_spam():
     results = list(closest_spam(vector))
     if results:
         msg, dist = results[0]
-        return jsonify({'spam': dist > 0.9, 'confidence': dist, 'meta': dict(results)})
-    return jsonify({'spam': False, 'confidence': 1, 'meta': {}})
+        is_spam = dist > 0.9
+    else:
+        dist = 1
+        is_spam = False
+    return jsonify({'spam': is_spam,
+                    'confidence': dist,
+                    'meta': dict(results)})
+
+
+def message_to_vector(message):
+    """sums up all known vectors of a given message."""
+    vector = np.zeors(W_norm[0, :].shape)
+    for term in message.split(' '):
+        if term in vocab:
+            vector += W_norm[vocab[term], :]
+    return vector
+
+
+@app.route('/test/calc_vector')
+def calc_vector():
+    ids = [int(i) for i in request.args['ids'].split(',')]
+
+    vector = np.zeors(W_norm[0, :].shape)
+    if i in ids:
+        vector += W_norm[i, :]
+
+    return jsonify({'vector': normalize_vector(vector).tolist()})
 
 
 @app.route('/spam/report')
@@ -124,19 +122,20 @@ def report_spam():
     """if spam message already exists or is close to a known message add a report count. else add as new entry in db."""
     data = request.get_json()
     vector = data['vector']
-    message = data['message']  # XXX maybe calculate this myself?
+    reported_message = data['message']
+    print('calculate vs given', vector == message_to_vector(reported_message))
 
     results = list(closest_spam(vector))
     if results:
-        msg, dist = results[0]
+        similar_msg, dist = results[0]
     else:
-        msg = dist = 0
+        similar_msg = dist = 0
 
     db = read_db()
     if dist > 0.9:
-        db[msg]['reports'] += 1
+        db.reported_messages[similar_msg].reports += 1
     else:
-        db[message] = {'reports': 1, 'vector': normalize_vector(vector)}
+        db.add_new_message(reported_message, normalize_vector(vector).tolist())
 
     save_db(db)
 
