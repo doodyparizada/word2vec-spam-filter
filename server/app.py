@@ -13,6 +13,7 @@ vocab = {}
 ivocab = {}
 WORD_LIST = ''
 W_norm = None
+EPSILON = 0.99
 
 
 def init():
@@ -33,36 +34,43 @@ def init():
     W_norm = normalize_matrix(W)
 
 
-def generate_spam_matrix():
+def generate_spam_matrix(report_threashold):
     """
     put all known spam vectors in a matrix
     """
     db = read_db()
     word_vectors = [(word, rm.vector)
                     for word, rm in db.reported_messages.items()
-                    if rm.reports >= 3]
+                    if rm.reports >= report_threashold]
     return generate_matrix(word_vectors)
 
 
-def closest_spam(vector):
+def closest_spam(vector, report_threashold=3):
     """given a vector, return the closest spam messages and distance."""
-    W, vocab, ivocab = generate_spam_matrix()
-    
-    vector = normalize_vector(np.array(vector))
+    W, vocab, ivocab = generate_spam_matrix(report_threashold=report_threashold)
+
+    if not vocab:  # means empty db
+        return
+
+    vector = normalize_vector(vector)
 
     dist = np.dot(W, vector.T)
 
     a = np.argsort(-dist)[:3]  # currently returns generator of 3 most closest
     for x in a:
-        yield ivocab[x], dist[x]
+        print 'found', x, ivocab[x], dist[x]
+        yield ivocab[x], float(dist[x])
 
 
 def read_db():
-    return DB(json.load('db.json'))
+    with open('db.json', 'r') as f:
+        return DB(json.loads(f.read()))
 
 
 def save_db(db):
-    json.dump(db.to_primitive(), 'db.json')
+    string = json.dumps(db.to_primitive())
+    with open('db.json', 'w') as f:
+        f.write(string)
 
 
 @app.route('/words/list')
@@ -77,18 +85,18 @@ def word_vectors():
     ids = [int(i) for i in request.args['ids'].split(',')]
 
     return jsonify({'words':
-                    {i: {'vector': W_norm[i, :]}
+                    {i: {'vector': W_norm[i, :].tolist()}
                      for i in ids}})
 
 
 @app.route('/spam/detect')
 def detect_spam():
     """the given vector should not be normalized. normalization happens on server."""
-    vector = [int(i) for i in request.args['vector'].split(',')]
+    vector = [float(i) for i in request.args['vector'].split(',')]
     results = list(closest_spam(vector))
     if results:
         msg, dist = results[0]
-        is_spam = dist > 0.9
+        is_spam = dist > EPSILON
     else:
         dist = 1
         is_spam = False
@@ -99,22 +107,11 @@ def detect_spam():
 
 def message_to_vector(message):
     """sums up all known vectors of a given message."""
-    vector = np.zeors(W_norm[0, :].shape)
+    vector = np.zeros(W_norm[0, :].shape)
     for term in message.split(' '):
         if term in vocab:
             vector += W_norm[vocab[term], :]
     return vector
-
-
-@app.route('/test/calc_vector')
-def calc_vector():
-    ids = [int(i) for i in request.args['ids'].split(',')]
-
-    vector = np.zeors(W_norm[0, :].shape)
-    if i in ids:
-        vector += W_norm[i, :]
-
-    return jsonify({'vector': normalize_vector(vector).tolist()})
 
 
 @app.route('/spam/report')
@@ -123,16 +120,16 @@ def report_spam():
     data = request.get_json()
     vector = data['vector']
     reported_message = data['message']
-    print('calculate vs given', vector == message_to_vector(reported_message))
+    # print('calculate vs given', vector == message_to_vector(reported_message))
 
-    results = list(closest_spam(vector))
+    results = list(closest_spam(vector, 0))
     if results:
         similar_msg, dist = results[0]
     else:
         similar_msg = dist = 0
 
     db = read_db()
-    if dist > 0.9:
+    if dist > EPSILON:
         db.reported_messages[similar_msg].reports += 1
     else:
         db.add_new_message(reported_message, normalize_vector(vector).tolist())

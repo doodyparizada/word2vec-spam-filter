@@ -2,6 +2,7 @@ import numpy as np
 
 
 def normalize_vector(vector):
+    vector = np.array(vector)
     vec_norm = np.zeros(vector.shape)
     d = (np.sum(vector ** 2,) ** (0.5))
     vec_norm = (vector.T / d).T
@@ -26,7 +27,7 @@ def generate_matrix(word_vectors):
     ivocab = {idx: w for idx, w in enumerate(words)}
         
     vocab_size = len(vectors)
-    vector_dim = len(vectors.values()[0])
+    vector_dim = len(vectors.values()[0]) if vectors else 0
     W = np.zeros((vocab_size, vector_dim))
     for word, v in vectors.items():
         W[vocab[word], :] = v
