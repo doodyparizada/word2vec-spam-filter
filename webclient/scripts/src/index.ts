@@ -1,4 +1,4 @@
-import * as view from "./view";
+import * as view from "./page";
 
 const popsicle = require("popsicle");
 const shuffle = require("shuffle-array");
@@ -101,6 +101,10 @@ function analyze(indexes: number[], reals: number[]): Promise<Vector> {
 				.use(popsicle.plugins.parse("json"))
 				.then(response2 => {
 					console.log(response2);
+					let msg = "message is " + (response2.body.spam ? "spam" : "a ok");
+					msg += " (confidence " + response2.body.confidence + ")";
+
+					alert(msg);
 				});
 		});
 }
