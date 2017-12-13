@@ -54,14 +54,25 @@ def init():
             freq = int(vals[1])
             max_freq = max_freq or freq  # the first iteration will set max_freq. The first line is the highest freq
             if word in vocab:
-                iweights[vocab[word]] = 0.5 - log(float(freq)/max_freq, 2)  # taken from https://www.wikiwand.com/en/Word_lists_by_frequency
-    
+                iweights[vocab[word]] = freq_to_weight(freq, max_freq)
 
+
+def get_vector(idx):
+    """return the weighted vector for an index."""
+    return (W_norm[i, :] * iweights.get(i, DEFAULT_WEIGHT))
+
+
+def freq_to_weight(freq, max_freq):
+    """calculate a vector weight for a frequency."""
+    # taken from https://www.wikiwand.com/en/Word_lists_by_frequency
+    return 0.5 - log(float(freq)/max_freq, 2)
+
+    
 def generate_spam_matrix(report_threashold):
     """
     put all known spam vectors in a matrix
     """
-    db = read_db()
+    db = DB.load()
     word_vectors = [(word, rm.vector)
                     for word, rm in db.reported_messages.items()
                     if rm.reports >= report_threashold]
@@ -85,15 +96,26 @@ def closest_spam(vector, report_threashold=3):
         yield ivocab[x], float(dist[x])
 
 
-def read_db():
-    with open('db.json', 'r') as f:
-        return DB(json.loads(f.read()))
+def tokenize_message(message):
+    """return a list of normalized words."""
+    return (message
+            .lower()
+            .replace(".", " .")
+            .replace(",", " ,")
+            .replace("?", " ?")
+            .replace("!", " !")
+            .replace(":", " :")
+            .replace("'s", " 's")
+            .split())
 
 
-def save_db(db):
-    string = json.dumps(db.to_primitive())
-    with open('db.json', 'w') as f:
-        f.write(string)
+def message_to_vector(message):
+    """sums up all known vectors of a given message."""
+    vector = np.zeros(W_norm[0, :].shape)
+    for term in tokenize_message(message):
+        if term in vocab:
+            vector += get_vector(vocab[term])
+    return vector
 
 
 @app.route('/words/list')
@@ -108,7 +130,7 @@ def word_vectors():
     ids = {int(i) for i in request.args['ids'].split(',')}
 
     return jsonify({'words':
-                    {i: {'vector': W_norm[i, :].tolist(), 'weight': iweights.get(i, DEFAULT_WEIGHT)}
+                    {i: {'vector': get_vector(i).tolist()}
                      for i in ids}})
 
 
@@ -128,29 +150,6 @@ def detect_spam():
                     'meta': dict(results)})
 
 
-def tokenize_message(message):
-    """return a list of normalized words."""
-    return (message
-            .lower()
-            .replace(".", " .")
-            .replace(",", " ,")
-            .replace("?", " ?")
-            .replace("!", " !")
-            .replace(":", " :")
-            .replace("'s", " 's")
-            .split())
-
-
-def message_to_vector(message):
-    """sums up all known vectors of a given message."""
-    vector = np.zeros(W_norm[0, :].shape)
-    for term in tokenize_message(message):
-        if term in vocab:
-            idx = vocab[term]
-            vector += W_norm[idx, :] * iweights.get(idx, DEFAULT_WEIGHT)
-    return vector
-
-
 @app.route('/spam/report', methods=['POST'])
 def report_spam():
     """if spam message already exists or is close to a known message add a report count. else add as new entry in db."""
@@ -164,14 +163,13 @@ def report_spam():
     else:
         similar_msg = dist = 0
 
-    db = read_db()
+    db = DB.load()
     if dist > EPSILON:
         db.reported_messages[similar_msg].reports += 1
     else:
         db.add_new_message(reported_message, normalize_vector(vector).tolist())
 
-    save_db(db)
-
+    db.save()
     return jsonify({})
 
 

@@ -1,5 +1,10 @@
+import json
+
 from schematics.models import Model
 from schematics.types import StringType, ListType, IntType, FloatType, ModelType, DictType
+
+
+FILENAME = 'db.json'
 
 
 class DB(Model):
@@ -14,3 +19,13 @@ class DB(Model):
         rm.reports = 1
         rm.vector = vector
         self.reported_messages[reported_message] = rm
+    
+    @classmethod
+    def load(cls):
+        with open(FILENAME, 'r') as f:
+            return DB(json.loads(f.read()))
+
+    def save(self):
+        string = json.dumps(self.to_primitive())
+        with open(FILENAME, 'w') as f:
+            f.write(string)
