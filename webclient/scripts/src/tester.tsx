@@ -2,7 +2,7 @@ import * as React from "react";
 
 export type TesterPageProps = {
 	report: (message: string) => void;
-	check: (message: string) => void;
+	check: (message: string) => Promise<{ spam: boolean; confidence: number; }>;
 }
 
 export class TesterPage extends React.Component<TesterPageProps, {}> {

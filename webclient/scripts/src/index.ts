@@ -48,7 +48,7 @@ view.render(main, {
 		const ids = indexes.concat(dummys);
 		// shuffle indexes
 		shuffle(ids);
-		analyze(ids, indexes).then(vector => console.log(vector));
+		return analyze(ids, indexes);
 	}
 });
 
@@ -79,7 +79,7 @@ function createGetUrl(path: string, arrName?: string, arr?: number[]): string {
 	return `${ baseUrl }${ path }${ str }`
 }
 
-function analyze(indexes: number[], reals: number[]): Promise<Vector> {
+function analyze(indexes: number[], reals: number[]): Promise<{ spam: boolean; confidence: number; }> {
 	return popsicle
 		.request(createGetUrl("/words/vector", "ids", indexes))
 		.use(popsicle.plugins.parse("json"))
@@ -101,10 +101,7 @@ function analyze(indexes: number[], reals: number[]): Promise<Vector> {
 				.use(popsicle.plugins.parse("json"))
 				.then(response2 => {
 					console.log(response2);
-					let msg = "message is " + (response2.body.spam ? "spam" : "a ok");
-					msg += " (confidence " + response2.body.confidence + ")";
-
-					alert(msg);
+					return response2.body;
 				});
 		});
 }

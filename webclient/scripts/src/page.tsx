@@ -7,7 +7,7 @@ import { ReceiverPage } from "./im-receiver";
 
 export type PageProps = {
 	report: (message: string) => void;
-	check: (message: string) => void;
+	check: (message: string) => Promise<{ spam: boolean; confidence: number; }>;
 }
 
 export type PageState = {
@@ -33,7 +33,7 @@ export class Page extends React.Component<PageProps, PageState> {
 				break;
 
 			case "receiver":
-				content = <ReceiverPage />;
+				content = <ReceiverPage report={ this.props.report } check={ this.props.check } />;
 				break;
 		}
 
