@@ -121,10 +121,23 @@ def detect_spam():
                     'meta': dict(results)})
 
 
+def tokenize_message(message):
+    """return a list of normalized words."""
+    return (message
+            .lower()
+            .replace(".", " .")
+            .replace(",", " ,")
+            .replace("?", " ?")
+            .replace("!", " !")
+            .replace(":", " :")
+            .replace("'s", " 's")
+            .split())
+
+
 def message_to_vector(message):
     """sums up all known vectors of a given message."""
     vector = np.zeros(W_norm[0, :].shape)
-    for term in message.split(' '):  # XXX TOKENIZE message similar to client
+    for term in tokenize_message(message):
         if term in vocab:
             vector += W_norm[vocab[term], :]  # XXX apply weights
     return vector
@@ -134,7 +147,7 @@ def message_to_vector(message):
 def report_spam():
     """if spam message already exists or is close to a known message add a report count. else add as new entry in db."""
     data = request.get_json()
-    reported_message = data['message'].lower()
+    reported_message = data['message']
     vector = message_to_vector(reported_message)
 
     results = list(closest_spam(vector, 0))
