@@ -13,7 +13,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-GLOVE = '../glove.6B.300d.txt'
+GLOVE = '../glove.6B.50d.txt'
 FREQ = '../enwiki-20150602-words-frequency.txt'
 
 iweights = {}
@@ -40,27 +40,32 @@ def init():
             vector = [float(x) for x in vals[1:]]
             word = vals[0]
             word_vectors.append((word, vector))
-            if i % 1000 == 0:
+            if i % 10000 == 0:
                 sys.stderr.write('.')
     
     WORD_LIST += '\n'.join(w for w, _ in word_vectors)
     W, vocab, ivocab = generate_matrix(word_vectors)
     W_norm = normalize_matrix(W)
 
+    sys.stderr.write('\ninitializing word weights')
     max_freq = None
     with open(FREQ, 'r') as f:
-        for line in f:
+        for i, line in enumerate(f):
             vals = line.rstrip().split(' ')
             word = vals[0]
             freq = int(vals[1])
             max_freq = max_freq or freq  # the first iteration will set max_freq. The first line is the highest freq
             if word in vocab:
                 iweights[vocab[word]] = freq_to_weight(freq, max_freq)
+            if i % 10000 == 0:
+                sys.stderr.write('.')
+
+    sys.stderr.write('\ndone!\n')
 
 
 def get_vector(idx):
     """return the weighted vector for an index."""
-    return (W_norm[i, :] * iweights.get(i, DEFAULT_WEIGHT))
+    return (W_norm[idx, :] * iweights.get(idx, DEFAULT_WEIGHT))
 
 
 def freq_to_weight(freq, max_freq):
@@ -164,8 +169,8 @@ def report_spam():
     db.save()
     return jsonify({})
 
-@app.route('/messages/', methods=['POST', 'GET'])
-def message_handler(self):
+@app.route('/messages', methods=['POST', 'GET'])
+def message_handler():
     global messages
     if request.method == 'POST':
         messages.append(request.get_json()['message'])
