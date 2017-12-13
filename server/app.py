@@ -21,6 +21,7 @@ vocab = {}
 ivocab = {}
 WORD_LIST = ''
 W_norm = None
+messages = []
 
 EPSILON = 0.95
 DEFAULT_WEIGHT = 15
@@ -84,17 +85,17 @@ def closest_spam(vector, report_threashold=3):
     W, vocab, ivocab = generate_spam_matrix(report_threashold=report_threashold)
 
     if not vocab:  # means empty db
-        return
+        return '', 0
 
     vector = normalize_vector(vector)
 
     dist = np.dot(W, vector.T)
 
-    a = np.argsort(-dist)[:3]  # currently returns generator of 3 most closest
+    a = np.argsort(-dist)[:1]  # currently returns generator of 3 most closest
     for x in a:
-        print 'found', x, ivocab[x], dist[x]
-        yield ivocab[x], float(dist[x])
+        return ivocab[x], float(dist[x])
 
+    return '', 0
 
 def tokenize_message(message):
     """return a list of normalized words."""
@@ -138,16 +139,11 @@ def word_vectors():
 def detect_spam():
     """the given vector should not be normalized. normalization happens on server."""
     vector = [float(i) for i in request.args['vector'].split(',')]
-    results = list(closest_spam(vector))
-    if results:
-        msg, dist = results[0]
-        is_spam = dist > EPSILON
-    else:
-        dist = 1
-        is_spam = False
+    msg, dist = closest_spam(vector)
+    is_spam = dist > EPSILON
     return jsonify({'spam': is_spam,
                     'confidence': dist,
-                    'meta': dict(results)})
+                    'meta': msg})
 
 
 @app.route('/spam/report', methods=['POST'])
@@ -157,11 +153,7 @@ def report_spam():
     reported_message = data['message']
     vector = message_to_vector(reported_message)
 
-    results = list(closest_spam(vector, 0))
-    if results:
-        similar_msg, dist = results[0]
-    else:
-        similar_msg = dist = 0
+    similar_msg, dist = closest_spam(vector, 0)
 
     db = DB.load()
     if dist > EPSILON:
@@ -171,6 +163,17 @@ def report_spam():
 
     db.save()
     return jsonify({})
+
+@app.route('/messages/', methods=['POST', 'GET'])
+def message_handler(self):
+    global messages
+    if request.method == 'POST':
+        messages.append(request.get_json()['message'])
+        return jsonify({})
+    else:
+        if messages:
+            return jsonify({'message': messages.pop(0)})
+        return jsonify({})
 
 
 if __name__ == '__main__':
