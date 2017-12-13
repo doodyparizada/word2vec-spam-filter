@@ -1,9 +1,11 @@
 .idea
 
-glove*.txt
-enwiki-20150602-words-frequency.txt
+corpus/*
+database/*
 
 webclient/*/bin
 webclient/node_modules
 
 server/*.pyc
+
+.ipynb_checkpoints

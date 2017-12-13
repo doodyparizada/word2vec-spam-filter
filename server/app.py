@@ -13,8 +13,8 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-GLOVE = '../glove.6B.50d.txt'
-FREQ = '../enwiki-20150602-words-frequency.txt'
+GLOVE = '../corpus/glove.6B.300d.txt'
+FREQ = '../corpus/enwiki-20150602-words-frequency.txt'
 
 iweights = {}
 vocab = {}

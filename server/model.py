@@ -4,7 +4,7 @@ from schematics.models import Model
 from schematics.types import StringType, ListType, IntType, FloatType, ModelType, DictType
 
 
-FILENAME = 'db.json'
+FILENAME = '../database/db.json'
 
 
 class DB(Model):

@@ -2,13 +2,20 @@ server:
 	cd server && python app.py
 
 static:
-	echo "compile static files"
+	npm run dev
 
 install:
 	pip install -r server/requirements.txt
-	echo "install static deps"
+	cd webclient && npm install
 
-download: glove.6B.zip enwiki-20150602-words-frequency.txt
-	wget https://github.com/IlyaSemenov/wikipedia-word-frequency/blob/master/results/enwiki-20150602-words-frequency.txt
-	wget http://nlp.stanford.edu/data/wordvecs/glove.6B.zip
-	unzip glove.6B.zip
+db:
+	mkdir -p database
+	echo '{}' > database/db.json
+
+download: corpus/glove.6B.zip corpus/enwiki-20150602-words-frequency.txt
+	mkdir -p corpus
+	wget -P corpus https://github.com/IlyaSemenov/wikipedia-word-frequency/blob/master/results/enwiki-20150602-words-frequency.txt
+	wget -p corpus http://nlp.stanford.edu/data/wordvecs/glove.6B.zip
+	cd corpus && unzip glove.6B.zip
+
+init: db download install
