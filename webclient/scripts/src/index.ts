@@ -62,9 +62,9 @@ function normalize(message: string): string {
 	return message
 		.replace(/\./g, " .")
 		.replace(/,/g, " ,")
-		.replace(/\?/g, " ,")
-		.replace(/\!/g, " ,")
-		.replace(/\:/g, " ,")
+		.replace(/\?/g, " ?")
+		.replace(/\!/g, " !")
+		.replace(/\:/g, " :")
 		.replace(/'s/g, " 's");
 }
 

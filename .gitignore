@@ -1,6 +1,7 @@
 .idea
 
 glove*.txt
+enwiki-20150602-words-frequency.txt
 
 webclient/*/bin
 webclient/node_modules
