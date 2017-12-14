@@ -1,6 +1,6 @@
 # word2vec-spam-filter
 
-This is a project done during the kik hackathon 2017.
+This is a project done during the Kik hackathon 2017.
 
 In this project we demonstrate a way to classify spam messages on the client while protecting user privacy.
 
@@ -18,10 +18,10 @@ We used 2 datasets for creating sentence vectors:
 ## Configurable parameters (Hyper-Parameters)
 We played around with a few configurations to get the best results for short user messages:
 
-* Confidence Threashold - a number between 0.0 - 1.0 to determine when 2 messages are considered the same
+* Confidence Threshold - a number between 0.0 - 1.0 to determine when 2 messages are considered the same
 * Distance Function - we used vector dot product
-* Normalization - how to deal with words we don't have in our corpus, puncuation marks, non english words
-* Vector Size - the longer the vector the higher the acuricy but heavier in memory
+* Normalization - how to deal with words we don't have in our corpus, punctuation marks, non english words
+* Vector Size - the longer the vector the higher the accuracy but heavier in memory
 * Weight Function - given a word frequency, how to create the vector weights (`the` should weigh less than `camera`)
 * Custom Corpus - creating the word vectors and frequencies from real user message data might yield better results
 * Random Indices - how many random indices should the client send to the server to mask the original message indices
