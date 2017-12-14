@@ -6,7 +6,7 @@ import { SenderPage } from "./im-sender";
 import { ReceiverPage } from "./im-receiver";
 
 export type PageProps = {
-	report: (message: string) => void;
+	report: (message: string) => Promise<void>;
 	check: (message: string) => Promise<{ spam: boolean; confidence: number; }>;
 }
 
@@ -41,11 +41,14 @@ export class Page extends React.Component<PageProps, PageState> {
 			<div id="page">
 				<div className="header">
 					<h1>spam classification based on word2vec</h1>
-					<select onChange={ this.onPageChange.bind(this) }>
-						<option value="tester">tester</option>
-						<option value="sender">sender</option>
-						<option value="receiver">receiver</option>
-					</select>
+					<div className="viewmode">
+						<span>View Mode: </span>
+						<select onChange={ this.onPageChange.bind(this) }>
+							<option value="tester">Standalone Tester</option>
+							<option value="sender">IM Sender</option>
+							<option value="receiver">IM Receiver</option>
+						</select>
+					</div>
 				</div>
 				{ content }
 			</div>

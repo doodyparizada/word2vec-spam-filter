@@ -1,6 +1,6 @@
 # word2vec-spam-filter
 
-This is a project done during the Kik hackathon 2017.
+This is a project done during the [Kik](https://github.com/kikinteractive/) hackathon 2017.
 
 In this project we demonstrate a way to classify spam messages on the client while protecting user privacy.
 
@@ -60,3 +60,9 @@ That should install all dependencies and kick start the project, if it all works
  > webpack output is served from /
 
 Now load http://localhost:3333/ in your browser
+
+There are 3 different "view modes" which can be switched using the select box at the top right corner of the page.  
+The 3 views are:
+ * Standalone Tester: A textarea in which one can input a message and then either report it as spam or check whether it is classified as spam.
+ * IM Sender: A textarea in which the user can input a message (or select a message from a bunch of existing ones) and then "send" the message to another client.
+ * IM Receiver: A view which displays a list of received messages (using the `IM Sender`) and the ability to report each message as spam.

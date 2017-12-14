@@ -36,23 +36,25 @@ export class ReceiverPage extends React.Component<ReceiverPageProps, ReceiverPag
 	}
 
 	render() {
+		const messages = this.state.messages.length === 0 ?
+			<tr><td>no messages yet</td></tr>
+			: this.state.messages.map(message => {
+					const clsname = message.isSpam === undefined ? "unknown" : (message.isSpam ? "spam" : "notspam");
+					return (
+						<tr key={ message.id } className={ clsname }>
+							<td> { message.content }</td>
+							<td>
+								<button onClick={ this.report.bind(this, message) } disabled={ !!message.isSpam }>report</button>
+							</td>
+						</tr>
+					);
+				});
+
 		return (
 			<div className="content">
 				<table className="incoming" cellPadding={ 0 } cellSpacing={ 0 }>
 					<tbody>
-					{
-						this.state.messages.map(message => {
-							const clsname = message.isSpam === undefined ? "unknown" : (message.isSpam ? "spam" : "notspam");
-							return (
-								<tr key={ message.id } className={ clsname }>
-									<td> { message.content }</td>
-									<td>
-										<button onClick={ this.report.bind(this, message) } disabled={ !!message.isSpam }>report</button>
-									</td>
-								</tr>
-							);
-						})
-					}
+					{ messages }
 					</tbody>
 				</table>
 			</div>

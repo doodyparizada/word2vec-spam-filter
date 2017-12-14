@@ -15,13 +15,13 @@ popsicle.request(createGetUrl("/words/list")).then(res => {
 const main = document.getElementById("main");
 view.render(main, {
 	report: message => {
-		popsicle.request({
+		return popsicle.request({
 			url: createGetUrl("/spam/report"),
 			method: "POST",
 			body: {
 				message
 			}
-		}).then(res => console.log("message reported"));
+		});
 	},
 	check: message => {
 		// go to lower case
@@ -100,7 +100,6 @@ function analyze(indexes: number[], reals: number[]): Promise<{ spam: boolean; c
 				.request(createGetUrl("/spam/detect", "vector", result.toArray()))
 				.use(popsicle.plugins.parse("json"))
 				.then(response2 => {
-					console.log(response2);
 					return response2.body;
 				});
 		});

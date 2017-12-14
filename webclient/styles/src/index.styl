@@ -8,6 +8,15 @@ html, body, #main
 html, body, p, h1, h2, h3, h4, h5, h6, textarea, input, button, span, div, main, select
 	font-family: Hack, monospace
 
+.actions
+	padding: 20px 0px 10px 0px
+	text-align: center
+
+	button
+		padding: 3px 10px
+		margin: 0px 10px
+		border: 1px solid black
+
 #main
 	padding: 20px
 
@@ -18,16 +27,22 @@ html, body, p, h1, h2, h3, h4, h5, h6, textarea, input, button, span, div, main,
 		flex-direction: column
 
 		.header
-			position: relative
+			display: flex
+			margin-bottom: 15px
+			padding-bottom: 5px
+			border-bottom: 2px solid black
 
 			h1
-				border-bottom: 2px solid black
+				margin: 0
+				padding: 0
+				flex-grow: 1
 
-			select
-				position: absolute
-				bottom: 25px
-				right: 20px
-				font-size: 14px
+			.viewmode
+				display:flex;
+				align-items: flex-end;
+
+				select
+					font-size: 14px
 
 		.content
 			flex-grow: 1
@@ -39,22 +54,13 @@ html, body, p, h1, h2, h3, h4, h5, h6, textarea, input, button, span, div, main,
 				flex-grow: 1
 				padding: 10px 10px 25px 10px
 
-			.actions
-				padding: 10px
-				text-align: center
-
-				button
-					padding: 3px 10px
-					margin: 0px 10px
-					border: 1px solid black
-
 			#examples
 				ul
 					font-size: 14px
 					padding: 0
 
 				li
-					padding: 3px 0px
+					padding: 5px 0px
 					list-style: none
 					cursor: pointer
 
