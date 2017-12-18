@@ -10,6 +10,10 @@ The bank of known reported messages is created from spam reports. The server com
 
 A message in the bank of reported messages is considered a spam message once it was reported more than 3 times.
 
+## Preview
+
+<img src="clip.gif" width="700"/>
+
 ## Corpus downloads
 We used 2 datasets for creating sentence vectors:
 1. word vectors taken from: https://github.com/stanfordnlp/GloVe
