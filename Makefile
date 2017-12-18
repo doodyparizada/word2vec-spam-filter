@@ -1,3 +1,5 @@
+.PHONY: server static install db download init
+
 server:
 	cd server && python app.py
 
